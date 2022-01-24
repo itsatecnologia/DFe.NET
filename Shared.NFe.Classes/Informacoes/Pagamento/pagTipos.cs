@@ -140,7 +140,7 @@ namespace NFe.Classes.Informacoes.Pagamento
         /// <summary>
         /// 16 - Depósito Bancário
         /// </summary>
-        [Description("=Depósito Bancário")]
+        [Description("Depósito Bancário")]
         [XmlEnum("16")] fpDepositoBancario= 16,
         
         /// <summary>
