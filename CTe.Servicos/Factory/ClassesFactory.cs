@@ -42,6 +42,7 @@ using CTe.Classes.Servicos.Recepcao;
 using CTe.Classes.Servicos.Recepcao.Retorno;
 using CTe.Classes.Servicos.Status;
 using CTe.Servicos.Inutilizacao;
+using DFe.Classes.Entidades;
 using DFe.Classes.Extensoes;
 using CTeEletronica = CTe.Classes.CTe;
 
@@ -134,13 +135,22 @@ namespace CTe.Servicos.Factory
             };
         }
 
-        public static evPrestDesacordo CriaEvPrestDesacordo(string indicadorDesacordo, string observacao)
+        public static evPrestDesacordo CriaEvPrestDesacordo(string indicadorDesacordo, string observacao, ConfiguracaoServico configuracaoServico = null)
         {
-            return new evPrestDesacordo
+            var configServico = configuracaoServico ?? ConfiguracaoServico.Instancia;
+
+            var evPrestDesacordo = new evPrestDesacordo
             {
                 indDesacordoOper = indicadorDesacordo,
                 xObs = observacao
             };
+
+            if (configServico.cUF == Estado.MT)//sem acentuação issue #1386
+            {
+                evPrestDesacordo.descEvento = "Prestacao do Servico em Desacordo";
+            }
+
+            return evPrestDesacordo;
         }
 
         public static enviCTe CriaEnviCTe(int lote, List<CTeEletronica> cteEletronicoList, ConfiguracaoServico configuracaoServico = null)
