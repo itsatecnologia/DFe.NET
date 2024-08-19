@@ -47,6 +47,9 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         private decimal? _vBcfcp;
         private decimal? _pFcp;
         private decimal? _vFcp;
+        private decimal? _pFCPDif;
+        private decimal? _vFCPDif;
+        private decimal? _vFCPEfet;
 
         /// <summary>
         ///     N11 - Origem da Mercadoria
@@ -75,11 +78,17 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
             get { return _pRedBc.Arredondar(4); }
             set { _pRedBc = value.Arredondar(4); }
         }
+        
+        /// <summary>
+        ///     N14a - Código de Benefício Fiscal na UF aplicado ao item quando houver RBC.
+        /// </summary>
+        [XmlElement(Order = 5)]
+        public string cBenefRBC { get; set; }
 
         /// <summary>
         ///     N15 - Valor da BC do ICMS
         /// </summary>
-        [XmlElement(Order = 5)]
+        [XmlElement(Order = 6)]
         public decimal? vBC
         {
             get { return _vBc.Arredondar(2); }
@@ -89,7 +98,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// <summary>
         ///     N16 - Alíquota do imposto
         /// </summary>
-        [XmlElement(Order = 6)]
+        [XmlElement(Order = 7)]
         public decimal? pICMS
         {
             get { return _pIcms.Arredondar(4); }
@@ -99,7 +108,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// <summary>
         ///     N16a - Valor do ICMS da Operação
         /// </summary>
-        [XmlElement(Order = 7)]
+        [XmlElement(Order = 8)]
         public decimal? vICMSOp
         {
             get { return _vIcmsOp.Arredondar(2); }
@@ -109,7 +118,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// <summary>
         ///     N16b - Percentual do diferimento
         /// </summary>
-        [XmlElement(Order = 8)]
+        [XmlElement(Order = 9)]
         public decimal? pDif
         {
             get { return _pDif.Arredondar(4); }
@@ -119,7 +128,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// <summary>
         ///     N16c - Valor do ICMS diferido
         /// </summary>
-        [XmlElement(Order = 9)]
+        [XmlElement(Order = 10)]
         public decimal? vICMSDif
         {
             get { return _vIcmsDif.Arredondar(2); }
@@ -129,7 +138,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// <summary>
         ///     N17 - Valor do ICMS
         /// </summary>
-        [XmlElement(Order = 10)]
+        [XmlElement(Order = 11)]
         public decimal? vICMS
         {
             get { return _vIcms.Arredondar(2); }
@@ -140,7 +149,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// N17a - Valor da Base de Cálculo do FCP
         /// Versão 4.00
         /// </summary>
-        [XmlElement(Order = 11)]
+        [XmlElement(Order = 12)]
         public decimal? vBCFCP
         {
             get { return _vBcfcp.Arredondar(2); }
@@ -156,7 +165,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// N17b - Percentual do Fundo de Combate à Pobreza (FCP)
         /// Versão 4.00
         /// </summary>
-        [XmlElement(Order = 12)]
+        [XmlElement(Order = 13)]
         public decimal? pFCP
         {
             get { return _pFcp.Arredondar(4); }
@@ -172,7 +181,7 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         /// N17c - Valor do Fundo de Combate à Pobreza (FCP)
         /// Versão 4.00
         /// </summary>
-        [XmlElement(Order = 13)]
+        [XmlElement(Order = 14)]
         public decimal? vFCP
         {
             get { return _vFcp.Arredondar(2); }
@@ -182,6 +191,54 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual
         public bool vFCPSpecified
         {
             get { return vFCP.HasValue; }
+        }
+
+        /// <summary>
+        /// N17d - Percentual do diferimento do ICMS relativo ao Fundo de Combate à Pobreza(FCP)
+        /// Versão 4.00
+        /// </summary>
+        [XmlElement(Order = 15)]
+        public decimal? pFCPDif
+        {
+            get { return _pFCPDif.Arredondar(4); }
+            set { _pFCPDif = value.Arredondar(4); }
+        }
+
+        public bool ShouldSerializepFCPDif()
+        {
+            return pFCPDif.HasValue;
+        }
+
+        /// <summary>
+        /// N17e - Valor do ICMS relativo ao Fundo de Combate à Pobreza (FCP) diferido
+        /// Versão 4.00
+        /// </summary>
+        [XmlElement(Order = 16)]
+        public decimal? vFCPDif
+        {
+            get { return _vFCPDif.Arredondar(2); }
+            set { _vFCPDif = value.Arredondar(2); }
+        }
+
+        public bool ShouldSerializevFCPDif()
+        {
+            return vFCPDif.HasValue;
+        }
+
+        /// <summary>
+        /// N17f - Valor efetivo do ICMS relativo ao Fundo de Combate à Pobreza(FCP)
+        /// Versão 4.00
+        /// </summary>
+        [XmlElement(Order = 17)]
+        public decimal? vFCPEfet
+        {
+            get { return _vFCPEfet.Arredondar(2); }
+            set { _vFCPEfet = value.Arredondar(2); }
+        }
+
+        public bool ShouldSerializevFCPEfet()
+        {
+            return vFCPEfet.HasValue;
         }
 
         public bool ShouldSerializemodBC()

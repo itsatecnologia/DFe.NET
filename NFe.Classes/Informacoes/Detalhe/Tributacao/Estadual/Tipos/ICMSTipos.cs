@@ -587,4 +587,59 @@ namespace NFe.Classes.Informacoes.Detalhe.Tributacao.Estadual.Tipos
     }
 
     #endregion
+
+    #region Indicação do valor do ICMS desonerado deduz ou não no produto NT 2023.004
+
+    /// <summary>
+    ///     <para>0 - alor do ICMS desonerado (vICMSDeson) não deduz do valor do item (vProd) / total da NF-e</para>
+    ///     <para>1 - Valor do ICMS desonerado (vICMSDeson) deduz do valor do item (vProd) / total da NF-e</para>
+    /// </summary>
+    public enum DeduzDesoneracaoNoProduto
+    {
+        /// <summary>
+        /// 0 - Valor do ICMS desonerado (vICMSDeson) não deduz do 
+        /// valor do item (vProd) / total da NF-e. (NT 2023.004)
+        /// </summary>
+        [Description("Não deduz do valor do item")]
+        [XmlEnum("0")]
+        NaoDeduz,
+        
+        /// <summary>
+        /// 1 - Valor do ICMS desonerado (vICMSDeson) deduz do valor 
+        /// do item (vProd) / total da NF-e. (NT 2023.004) 
+        /// </summary>
+        [Description("Deduz do Valor do Iem")]
+        [XmlEnum("1")]
+        Deduz,
+    }
+
+    #endregion
+    /// <summary>
+    ///     <para>3 – Uso na agropecuária;</para>
+    ///     <para>9 – Outros. (v2.0)</para>
+    ///     <para>12 – Órgão de fomento e desenvolvimento agropecuário</para>
+    /// </summary>
+    public enum MotivoDesoneracaoIcmsSt
+    {
+        /// <summary>
+        /// 3 – Uso na agropecuária
+        /// </summary>
+        [Description("Uso na agropecuária")]
+        [XmlEnum("3")]
+        MdiProdutorAgropecuario = 3,
+
+        /// <summary>
+        /// 9 – Outros. (v2.0)
+        /// </summary>
+        [Description("Outros")]
+        [XmlEnum("9")]
+        MdiOutros = 9,
+
+        /// <summary>
+        /// 12 – Fomento agropecuário
+        /// </summary>
+        [Description("Órgão de fomento e desenvolvimento agropecuário")]
+        [XmlEnum("12")]
+        MdiFomentoAgropecuario = 12,
+    }
 }

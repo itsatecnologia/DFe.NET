@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DFe.Classes.Entidades;
+using DFe.Classes.Extensoes;
 using DFe.Classes.Flags;
 using NFe.Classes.Informacoes.Identificacao.Tipos;
 using NFe.Classes.Servicos.Tipos;
@@ -60,7 +61,7 @@ namespace NFe.Utils.Enderecos
         /// <returns></returns>
         public static List<Estado> EstadosQueUsamSvcAnParaNfe()
         {
-            return new List<Estado> { Estado.AC, Estado.AL, Estado.AP, Estado.DF, Estado.ES, Estado.MG, Estado.PB, Estado.RJ, Estado.RN, Estado.RO, Estado.RR, Estado.RS, Estado.SC, Estado.SE, Estado.SP, Estado.TO };
+            return new List<Estado> { Estado.AC, Estado.AL, Estado.AP, Estado.CE, Estado.DF, Estado.ES, Estado.MG, Estado.PA, Estado.PB, Estado.PI, Estado.RJ, Estado.RN, Estado.RO, Estado.RR, Estado.RS, Estado.SC, Estado.SE, Estado.SP, Estado.TO };
         }
 
         /// <summary>
@@ -384,7 +385,7 @@ namespace NFe.Utils.Enderecos
                 #endregion
 
                 #region NFCe
-                
+
                 addServico(new[] { ServicoNFe.NFeAutorizacao }, versao4, hom, emissao, Estado.CE, nfce, "https://nfceh.sefaz.ce.gov.br/nfce4/services/NFeAutorizacao4?WSDL");
                 addServico(new[] { ServicoNFe.NFeRetAutorizacao }, versao4, hom, emissao, Estado.CE, nfce, "https://nfceh.sefaz.ce.gov.br/nfce4/services/NFeRetAutorizacao4?WSDL");
                 addServico(new[] { ServicoNFe.NfeInutilizacao }, versao4, hom, emissao, Estado.CE, nfce, "https://nfceh.sefaz.ce.gov.br/nfce4/services/NFeInutilizacao4?WSDL");
@@ -401,7 +402,7 @@ namespace NFe.Utils.Enderecos
 
             #region Produção
 
-            
+
             foreach (var emissao in emissaoComum)
             {
                 #region NFe
@@ -616,7 +617,7 @@ namespace NFe.Utils.Enderecos
                 addServico(new[] { ServicoNFe.NFeRetAutorizacao }, versao4, prod, emissao, Estado.MG, nfe, "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRetAutorizacao4");
 
                 // NFC-e
-                 //18/12/2018 - http://www.sped.fazenda.mg.gov.br/spedmg/nfce/web-services/
+                //18/12/2018 - http://www.sped.fazenda.mg.gov.br/spedmg/nfce/web-services/
                 addServico(new[] { ServicoNFe.NfeInutilizacao }, versao4, prod, emissao, Estado.MG, nfce, "https://nfce.fazenda.mg.gov.br/nfce/services/NFeInutilizacao4");
                 addServico(new[] { ServicoNFe.NfeConsultaProtocolo }, versao4, prod, emissao, Estado.MG, nfce, "https://nfce.fazenda.mg.gov.br/nfce/services/NFeConsultaProtocolo4");
                 addServico(new[] { ServicoNFe.NfeStatusServico }, versao4, prod, emissao, Estado.MG, nfce, "https://nfce.fazenda.mg.gov.br/nfce/services/NFeStatusServico4");
@@ -1629,7 +1630,7 @@ namespace NFe.Utils.Enderecos
 
             #endregion
 
-#region ConsultaGtin
+            #region ConsultaGtin e Insucesso na entrega
             foreach (var estado in Enum.GetValues(typeof(Estado))
                          .Cast<Estado>()
                          .ToList())
@@ -1638,12 +1639,17 @@ namespace NFe.Utils.Enderecos
                 {
                     foreach (var modelo in todosOsModelos)
                     {
+                        //GTIN
                         addServico(new[] { ServicoNFe.ConsultaGtin }, versao1, TipoAmbiente.Producao, emissao, estado, modelo, "https://dfe-servico.svrs.rs.gov.br/ws/ccgConsGTIN/ccgConsGTIN.asmx");
                         addServico(new[] { ServicoNFe.ConsultaGtin }, versao1, TipoAmbiente.Homologacao, emissao, estado, modelo, "https://dfe-servico.svrs.rs.gov.br/ws/ccgConsGTIN/ccgConsGTIN.asmx");
+
+                        //Insucesso Entrega NFe
+                        addServico(new[] { ServicoNFe.RecepcaoEventoInsucessoEntregaNFe, ServicoNFe.RecepcaoEventoCancInsucessoEntregaNFe }, versao1, TipoAmbiente.Producao, emissao, estado, modelo, "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx");
+                        addServico(new[] { ServicoNFe.RecepcaoEventoInsucessoEntregaNFe, ServicoNFe.RecepcaoEventoCancInsucessoEntregaNFe }, versao1, TipoAmbiente.Homologacao, emissao, estado, modelo, "https://hom1.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx");
                     }
                 }
             }
-#endregion
+            #endregion
 
             return endServico;
         }
@@ -1671,6 +1677,9 @@ namespace NFe.Utils.Enderecos
                 case ServicoNFe.RecepcaoEventoCartaCorrecao:
                 case ServicoNFe.RecepcaoEventoCancelmento:
                     return cfgServico.VersaoRecepcaoEventoCceCancelamento;
+                case ServicoNFe.RecepcaoEventoInsucessoEntregaNFe:
+                case ServicoNFe.RecepcaoEventoCancInsucessoEntregaNFe:
+                    return cfgServico.VersaoRecepcaoEventoInsucessoEntrega;
                 case ServicoNFe.RecepcaoEventoEpec:
                     return cfgServico.VersaoRecepcaoEventoEpec;
                 case ServicoNFe.RecepcaoEventoManifestacaoDestinatario:
@@ -1720,13 +1729,17 @@ namespace NFe.Utils.Enderecos
         ///     Obtém uma url a partir de uma lista armazenada em enderecoServico e povoada dinamicamente no create desta classe
         /// </summary>
         /// <returns></returns>
-        public static string ObterUrlServico(ServicoNFe servico, ConfiguracaoServico cfgServico)
+        public static string ObterUrlServico(ServicoNFe servico, ConfiguracaoServico cfgServico, string uf = null)
         {
             var versaoServico = ObterVersaoServico(servico, cfgServico);
             if (versaoServico == null)
                 throw new Exception(string.Format("Não foi possível obter a versão do serviço {0}!", servico));
-            return ObterUrlServico(servico, versaoServico.GetValueOrDefault(), cfgServico.cUF, cfgServico.tpAmb,
-                cfgServico.ModeloDocumento, cfgServico.tpEmis);
+
+            Estado estado = cfgServico.cUF;
+            if (!string.IsNullOrWhiteSpace(uf))
+                estado = estado.SiglaParaEstado(uf);
+
+            return ObterUrlServico(servico, versaoServico.GetValueOrDefault(), estado, cfgServico.tpAmb, cfgServico.ModeloDocumento, cfgServico.tpEmis);
         }
 
         /// <summary>
@@ -1753,8 +1766,7 @@ namespace NFe.Utils.Enderecos
         /// <param name="tipoAmbiente">Tipo de ambiente (produção ou homologação)</param>
         /// <param name="modeloDocumento">Modelo do documento. Ex: NFe, NFCe.</param>
         /// <param name="tipoEmissao">Tipo de emissão da nota</param>
-        public static List<EnderecoServico> ObterEnderecoServicosMaisRecentes(VersaoServico versaoLimite, Estado uf, TipoAmbiente tipoAmbiente,
-            ModeloDocumento modeloDocumento, TipoEmissao tipoEmissao)
+        public static List<EnderecoServico> ObterEnderecoServicosMaisRecentes(VersaoServico versaoLimite, Estado uf, TipoAmbiente tipoAmbiente, ModeloDocumento modeloDocumento, TipoEmissao tipoEmissao)
         {
             var enderecoServicos = from end in ListaEnderecos
                                    where end.Estado == uf && end.TipoAmbiente == tipoAmbiente && end.ModeloDocumento == modeloDocumento &&

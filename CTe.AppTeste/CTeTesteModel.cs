@@ -615,6 +615,8 @@ namespace CTe.AppTeste
             ConfiguracaoServico.Instancia.DiretorioSchemas = config.ConfigWebService.CaminhoSchemas;
             ConfiguracaoServico.Instancia.IsSalvarXml = config.IsSalvarXml;
             ConfiguracaoServico.Instancia.DiretorioSalvarXml = config.DiretorioSalvarXml;
+            ConfiguracaoServico.Instancia.IsAdicionaQrCode = true;
+            ConfiguracaoServico.Instancia.IsValidaSchemas = true;
         }
 
         public void ConsultarStatusServico2()
@@ -623,7 +625,7 @@ namespace CTe.AppTeste
             CarregarConfiguracoes(config);
 
             var statusServico = new StatusServico();
-            var retorno = statusServico.ConsultaStatus();
+            var retorno = statusServico.ConsultaStatusV4();
 
             OnSucessoSync(new RetornoEEnvio(retorno));
         }
@@ -662,10 +664,18 @@ namespace CTe.AppTeste
             CarregarConfiguracoes(config);
 
             var servicoConsultaProtocolo = new ConsultaProtcoloServico();
-            var retorno = servicoConsultaProtocolo.ConsultaProtocolo(chave);
 
 
-            OnSucessoSync(new RetornoEEnvio(retorno));
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve200)
+            {
+                var retorno = servicoConsultaProtocolo.ConsultaProtocolo(chave);
+                OnSucessoSync(new RetornoEEnvio(retorno));
+            }
+            else // versao 4.00
+            {
+                var retorno = servicoConsultaProtocolo.ConsultaProtocoloV4(chave);
+                OnSucessoSync(new RetornoEEnvio(retorno));
+            }
 
         }
 
@@ -864,7 +874,12 @@ namespace CTe.AppTeste
             #region infCte
 
             cteEletronico.infCte = new infCte();
-            cteEletronico.infCte.versao = config.ConfigWebService.Versao;
+
+            if (config.ConfigWebService.Versao == versao.ve400 || config.ConfigWebService.Versao == versao.ve300)
+            {
+                cteEletronico.infCte.versao = versao.ve300;
+            }
+            
 
             #endregion
 
@@ -903,7 +918,7 @@ namespace CTe.AppTeste
             cteEletronico.infCte.ide.UFFim = config.Empresa.SiglaUf;
             cteEletronico.infCte.ide.retira = retira.Nao;
 
-            if (config.ConfigWebService.Versao == versao.ve300)
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve400)
             {
                 cteEletronico.infCte.ide.indIEToma = indIEToma.ContribuinteIcms;
             }
@@ -916,7 +931,7 @@ namespace CTe.AppTeste
                 };
             }
 
-            if (config.ConfigWebService.Versao == versao.ve300)
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve400)
             {
                 cteEletronico.infCte.ide.tomaBase3 = new toma3
                 {
@@ -945,6 +960,11 @@ namespace CTe.AppTeste
             cteEletronico.infCte.emit.enderEmit.CEP = long.Parse(config.Empresa.Cep);
             cteEletronico.infCte.emit.enderEmit.UF = config.Empresa.SiglaUf;
             cteEletronico.infCte.emit.enderEmit.fone = config.Empresa.Telefone;
+
+            if (config.ConfigWebService.Versao == versao.ve400)
+            {
+                cteEletronico.infCte.emit.CRT = CRT.SimplesNacionalMei; // agora temos o simples nacional MEI , é diferente de simples nacional.
+            }
 
             #endregion
 
@@ -1006,7 +1026,7 @@ namespace CTe.AppTeste
 
             cteEletronico.infCte.imp.ICMS.TipoICMS = icmsSimplesNacional;
 
-            if (config.ConfigWebService.Versao == versao.ve300)
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve400)
             {
                 icmsSimplesNacional.CST = CST.ICMS90;
             }
@@ -1056,6 +1076,11 @@ namespace CTe.AppTeste
                 cteEletronico.infCte.infCTeNorm.infModal.versaoModal = versaoModal.veM300;
             }
 
+            if (config.ConfigWebService.Versao == versao.ve400)
+            {
+                cteEletronico.infCte.infCTeNorm.infModal.versaoModal = versaoModal.veM400;
+            }
+
             var rodoviario = new rodo();
             rodoviario.RNTRC = config.Empresa.RNTRC;
 
@@ -1070,16 +1095,30 @@ namespace CTe.AppTeste
             #endregion
 
 
-            var numeroLote = InputBoxTuche("Número Lote");
+            
 
             var servicoRecepcao = new ServicoCTeRecepcao();
 
-            // Evento executado antes do envio do CT-e para o WebService
-            // servicoRecepcao.AntesDeEnviar += AntesEnviarLoteCte;
 
-            var retornoEnvio = servicoRecepcao.CTeRecepcao(int.Parse(numeroLote), new List<CteEletronico> { cteEletronico });
+            if (config.ConfigWebService.Versao == versao.ve300)
+            {
+                var numeroLote = InputBoxTuche("Número Lote");
+                // Evento executado antes do envio do CT-e para o WebService
+                // servicoRecepcao.AntesDeEnviar += AntesEnviarLoteCte;
 
-            OnSucessoSync(new RetornoEEnvio(retornoEnvio));
+                var retornoEnvio = servicoRecepcao.CTeRecepcao(int.Parse(numeroLote), new List<CteEletronico> { cteEletronico });
+
+                OnSucessoSync(new RetornoEEnvio(retornoEnvio));
+            }
+
+            if (config.ConfigWebService.Versao == versao.ve400)
+            {
+                var retornoEnvio = servicoRecepcao.CTeRecepcaoSincronoV4(cteEletronico);
+
+                OnSucessoSync(new RetornoEEnvio(retornoEnvio));
+
+            }
+
 
             config.ConfigWebService.Numeracao++;
             new ConfiguracaoDao().SalvarConfiguracao(config);
@@ -1110,7 +1149,12 @@ namespace CTe.AppTeste
             #region infCte
 
             cteEletronico.infCte = new infCte();
-            cteEletronico.infCte.versao = config.ConfigWebService.Versao;
+
+            if (config.ConfigWebService.Versao == versao.ve400 || config.ConfigWebService.Versao == versao.ve300)
+            {
+                cteEletronico.infCte.versao = versao.ve300;
+            }
+
 
             #endregion
 
@@ -1129,7 +1173,7 @@ namespace CTe.AppTeste
             cteEletronico.infCte.ide.mod = ModeloDocumento.CTe;
             cteEletronico.infCte.ide.serie = config.ConfigWebService.Serie;
             cteEletronico.infCte.ide.nCT = config.ConfigWebService.Numeracao;
-            cteEletronico.infCte.ide.dhEmi = DateTime.Now;
+            cteEletronico.infCte.ide.dhEmi = DateTimeOffset.Now;
             cteEletronico.infCte.ide.tpImp = tpImp.Retrado;
             cteEletronico.infCte.ide.tpEmis = tpEmis.teNormal;
             cteEletronico.infCte.ide.tpAmb = config.ConfigWebService.Ambiente; // o serviço adicionara automaticamente isso para você
@@ -1149,7 +1193,7 @@ namespace CTe.AppTeste
             cteEletronico.infCte.ide.UFFim = config.Empresa.SiglaUf;
             cteEletronico.infCte.ide.retira = retira.Nao;
 
-            if (config.ConfigWebService.Versao == versao.ve300)
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve400)
             {
                 cteEletronico.infCte.ide.indIEToma = indIEToma.ContribuinteIcms;
             }
@@ -1162,7 +1206,7 @@ namespace CTe.AppTeste
                 };
             }
 
-            if (config.ConfigWebService.Versao == versao.ve300)
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve400)
             {
                 cteEletronico.infCte.ide.tomaBase3 = new toma3
                 {
@@ -1191,6 +1235,11 @@ namespace CTe.AppTeste
             cteEletronico.infCte.emit.enderEmit.CEP = long.Parse(config.Empresa.Cep);
             cteEletronico.infCte.emit.enderEmit.UF = config.Empresa.SiglaUf;
             cteEletronico.infCte.emit.enderEmit.fone = config.Empresa.Telefone;
+
+            if (config.ConfigWebService.Versao == versao.ve400)
+            {
+                cteEletronico.infCte.emit.CRT = CRT.SimplesNacionalMei; // agora temos o simples nacional MEI , é diferente de simples nacional.
+            }
 
             #endregion
 
@@ -1252,7 +1301,7 @@ namespace CTe.AppTeste
 
             cteEletronico.infCte.imp.ICMS.TipoICMS = icmsSimplesNacional;
 
-            if (config.ConfigWebService.Versao == versao.ve300)
+            if (config.ConfigWebService.Versao == versao.ve300 || config.ConfigWebService.Versao == versao.ve400)
             {
                 icmsSimplesNacional.CST = CST.ICMS90;
             }
@@ -1300,6 +1349,11 @@ namespace CTe.AppTeste
             if (config.ConfigWebService.Versao == versao.ve300)
             {
                 cteEletronico.infCte.infCTeNorm.infModal.versaoModal = versaoModal.veM300;
+            }
+
+            if (config.ConfigWebService.Versao == versao.ve400)
+            {
+                cteEletronico.infCte.infCTeNorm.infModal.versaoModal = versaoModal.veM400;
             }
 
             var rodoviario = new rodo();
@@ -1384,8 +1438,9 @@ namespace CTe.AppTeste
 
             var cteOS = new CTeOS();
 
+            cteOS.versao = VersaoServico.Versao400;
             cteOS.InfCte = new infCteOS();
-
+            cteOS.InfCte.versao = VersaoServico.Versao400;
 
             #region ide
             cteOS.InfCte.ide = new ideOs();
@@ -1464,6 +1519,14 @@ namespace CTe.AppTeste
             cteOS.InfCte.vPrest = new vPrestOs();
             cteOS.InfCte.vPrest.vTPrest = 100m;
             cteOS.InfCte.vPrest.vRec = 100m;
+            cteOS.InfCte.vPrest.Comp = new List<Classes.Informacoes.Complemento.Comp>()
+            {
+                new Classes.Informacoes.Complemento.Comp()
+                {
+                    vComp = 1,
+                    xNome = "teste"
+                }
+            };
 
             #endregion
 
@@ -1496,19 +1559,28 @@ namespace CTe.AppTeste
                 respSeg = respSeg.EmitenteDoCTe
             });
 
-
-
             cteOS.InfCte.infCTeNorm.infModal = new infModalOs();
 
-            cteOS.InfCte.infCTeNorm.infModal.versaoModal = versaoModal.veM300;
+            cteOS.InfCte.infCTeNorm.infModal.versaoModal = versaoModal.veM400;
 
-            var rodoviario = new rodoOS();
+            var rodoviario = new CTe.CTeOSDocumento.CTe.CTeOS.Informacoes.InfCTeNormal.rodoOS();
 
             rodoviario.TAF = "888888888888";
             //rodoviario.NroRegEstadual = "23632667367";
 
 
             cteOS.InfCte.infCTeNorm.infModal.ContainerModal = rodoviario;
+
+            cteOS.InfCte.autXML = new List<autXML>()
+            {
+                new autXML()
+                {
+                    CPF = "04483616048"
+                }
+            };
+
+            var xml = cteOS.ObterXmlString();
+
             #endregion
         }
 

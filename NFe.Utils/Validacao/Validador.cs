@@ -41,6 +41,7 @@ using DFe.Utils;
 using NFe.Classes.Servicos.Evento;
 using NFe.Classes.Servicos.Tipos;
 using NFe.Utils.Excecoes;
+using Shared.DFe.Utils;
 
 namespace NFe.Utils.Validacao
 {
@@ -61,6 +62,10 @@ namespace NFe.Utils.Validacao
                         : "envEventoCancNFe_v1.00.xsd";
                 case ServicoNFe.RecepcaoEventoCartaCorrecao:
                     return "envCCe_v1.00.xsd";
+                case ServicoNFe.RecepcaoEventoInsucessoEntregaNFe:
+                    return "envEventoInsucessoNFe_v1.00.xsd";
+                case ServicoNFe.RecepcaoEventoCancInsucessoEntregaNFe:
+                    return "envEventoCancInsucessoNFe_v1.00.xsd";
                 case ServicoNFe.RecepcaoEventoEpec:
                     return "envEPEC_v1.00.xsd";
                 case ServicoNFe.RecepcaoEventoManifestacaoDestinatario:
@@ -153,7 +158,24 @@ namespace NFe.Utils.Validacao
             // Especifica o tratamento de evento para os erros de validacao
             cfg.ValidationEventHandler += delegate (object sender, ValidationEventArgs args)
             {
-                falhas.AppendLine($"[{args.Severity}] - {args.Message} {args.Exception?.Message} na linha {args.Exception.LineNumber} posição {args.Exception.LinePosition} em {args.Exception.SourceUri}".ToString());
+                string message = args.Message.ToLower().RemoverAcentos();
+
+                if (!(
+                    
+                    //Está errado o schema. Pois o certo é ser 20 o length e não 28 como está no schema envIECTE_v4.00xsd
+                    (message.Contains("hashtentativaentrega") && message.Contains("o comprimento atual nao e igual")) || 
+
+                    //erro de orgaoibge que duplicou em alguns xsds porem a receita federal veio a arrumar posteriormente, mesmo assim alguns não atualizam os xsds
+                    (message.Contains("tcorgaoibge") && message.Contains("ja foi declarado"))
+
+                    //no futuro adicionar novos aqui...
+                ))
+                {
+                    falhas.AppendLine($"[{args.Severity}] - {message} {args.Exception?.Message} " +
+                                        $"na linha {args.Exception.LineNumber} " +
+                                        $"posição {args.Exception.LinePosition} " +
+                                        $"em {args.Exception.SourceUri}".ToString());
+                }
             };
 
             // cria um leitor para validação

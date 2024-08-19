@@ -39,7 +39,6 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Forms;
-using DFe.Classes.Entidades;
 using DFe.Classes.Flags;
 using DFe.Utils;
 using NFe.Classes;
@@ -76,6 +75,9 @@ using NFe.Utils;
 using NFe.Utils.Excecoes;
 using NFe.Utils.Tributacao.Federal;
 using Image = System.Drawing.Image;
+using static System.Net.Mime.MediaTypeNames;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace NFe.AppTeste
 {
@@ -272,6 +274,149 @@ namespace NFe.AppTeste
                 var servicoNFe = new ServicosNFe(_configuracoes.CfgServico);
                 var retornoConsulta = servicoNFe.ConsultaGtin(gtin);
                 TrataRetorno(retornoConsulta);
+
+                #endregion
+            }
+            catch (ComunicacaoException ex)
+            {
+                Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
+            }
+            catch (ValidacaoSchemaException ex)
+            {
+                Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
+            }
+            catch (Exception ex)
+            {
+                if (!string.IsNullOrEmpty(ex.Message))
+                    Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
+            }
+        }
+
+        private void BtnInsucessoEntrega_Click(object sender, RoutedEventArgs e)
+        {
+            const string titulo = "Insucesso Entrega NFe";
+
+            try
+            {
+                #region Insucesso Entrega NFe
+
+                var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:", "1");
+                if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
+
+                var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Número sequencial do evento:", "1");
+                if (string.IsNullOrEmpty(sequenciaEvento))
+                    throw new Exception("O número sequencial deve ser informado!");
+
+                var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:", "35240311656919000154550750000008281647961399");
+                if (string.IsNullOrEmpty(chave)) throw new Exception("A Chave deve ser informada!");
+                if (chave.Length != 44) throw new Exception("Chave deve conter 44 caracteres!");
+
+                var dhTentativaEntregaStr = Funcoes.InpuBox(this, titulo, "Data da tentativa da entrega da NFe", DateTimeOffset.Now.ToString("dd/MM/yyyy"));
+                if (string.IsNullOrEmpty(dhTentativaEntregaStr)) throw new Exception("A Data deve ser informada!");
+
+                if (!DateTimeOffset.TryParse(dhTentativaEntregaStr, out DateTimeOffset dhTentativaEntrega))
+                    throw new Exception("Data inválida!");
+
+                var motivoInsucessoStr = Funcoes.InpuBox(this, titulo, "Motivo do Insucesso da entrega da NFe", "1");
+                if (!Enum.TryParse(motivoInsucessoStr, out NFe.Classes.Servicos.Evento.MotivoInsucesso motivoInsucesso)) throw new Exception("Motivo deve ser informada!");
+
+                string justificativa = null;
+
+                if (motivoInsucesso == Classes.Servicos.Evento.MotivoInsucesso.Outros)
+                    justificativa = Funcoes.InpuBox(this, titulo, "Motivo");
+
+                var imagemExemploBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAADUlEQVR42gECAP3/AP8BAQEATamDVwAAAABJRU5ErkJggg==";
+                var concatenacao = chave + imagemExemploBase64;
+
+                var hashTentativaEntrega = string.Empty;
+                using (SHA1 sha1 = SHA1.Create())
+                {
+                    byte[] inputBytes = Encoding.UTF8.GetBytes(concatenacao);
+                    byte[] hashBytes = sha1.ComputeHash(inputBytes);
+                    // O hash SHA-1 terá 20 bytes
+                    hashTentativaEntrega = Convert.ToBase64String(hashBytes).Trim();
+                }
+
+                int? nTentativa = null;
+                var nTentativaStr = Funcoes.InpuBox(this, titulo, "Número tentativas de entrega:", "1");
+                if (!string.IsNullOrEmpty(nTentativaStr)) nTentativa = Convert.ToInt32(nTentativaStr);
+
+                DateTimeOffset? dhHashTentativaEntrega = null;
+                var dhHashTentativaEntregaStr = Funcoes.InpuBox(this, titulo, "Data geração do Hash Tentativa na Entrega:", DateTimeOffset.Now.ToString("dd/MM/yyyy"));
+                if (!string.IsNullOrEmpty(dhHashTentativaEntregaStr)) dhHashTentativaEntrega = Convert.ToDateTime(dhHashTentativaEntregaStr);
+
+                decimal? latGps = null;
+                var latGpsStr = Funcoes.InpuBox(this, titulo, "Latitude GPS:");
+                if (!string.IsNullOrEmpty(latGpsStr)) latGps = Convert.ToDecimal(latGpsStr);
+
+                decimal? longGps = null;
+                var longGpsStr = Funcoes.InpuBox(this, titulo, "Latitude GPS:");
+                if (!string.IsNullOrEmpty(longGpsStr)) longGps = Convert.ToDecimal(longGpsStr);
+
+
+                var servicoNFe = new ServicosNFe(_configuracoes.CfgServico);
+                var cpfcnpj = string.IsNullOrEmpty(_configuracoes.Emitente.CNPJ)
+                    ? _configuracoes.Emitente.CPF
+                    : _configuracoes.Emitente.CNPJ;
+
+                var retornoInsucesso = servicoNFe.RecepcaoEventoInsucessoEntrega(Convert.ToInt32(idlote),
+                    Convert.ToInt16(sequenciaEvento), cpfcnpj, chave, dhTentativaEntrega, motivoInsucesso, hashTentativaEntrega, nTentativa,
+                    dhHashTentativaEntrega, latGps, longGps, justificativa);
+
+                TrataRetorno(retornoInsucesso);
+
+                #endregion
+            }
+            catch (ComunicacaoException ex)
+            {
+                Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
+            }
+            catch (ValidacaoSchemaException ex)
+            {
+                Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
+            }
+            catch (Exception ex)
+            {
+                if (!string.IsNullOrEmpty(ex.Message))
+                    Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
+            }
+        }
+        
+         private void BtnCancInsucessoEntrega_Click(object sender, RoutedEventArgs e)
+        {
+            const string titulo = "Cancelar Insucesso Entrega NFe";
+
+            try
+            {
+                #region Cancelar Insucesso Entrega NFe
+
+                var idlote = Funcoes.InpuBox(this, titulo, "Identificador de controle do Lote de envio:", "1");
+                if (string.IsNullOrEmpty(idlote)) throw new Exception("A Id do Lote deve ser informada!");
+
+                var sequenciaEvento = Funcoes.InpuBox(this, titulo, "Número sequencial do evento:", "1");
+                if (string.IsNullOrEmpty(sequenciaEvento))
+                    throw new Exception("O número sequencial deve ser informado!");
+
+                var chave = Funcoes.InpuBox(this, titulo, "Chave da NFe:", "35240311656919000154550750000008281647961399");
+                if (string.IsNullOrEmpty(chave)) throw new Exception("A Chave deve ser informada!");
+                if (chave.Length != 44) throw new Exception("Chave deve conter 44 caracteres!");
+
+                var nProtEvento = Funcoes.InpuBox(this, titulo, "Nº Prot Evento:");
+
+                if (string.IsNullOrEmpty(nProtEvento))
+                    throw new Exception("O nº Prot Evento deve ser informado!");
+
+
+
+                var servicoNFe = new ServicosNFe(_configuracoes.CfgServico);
+                var cpfcnpj = string.IsNullOrEmpty(_configuracoes.Emitente.CNPJ)
+                    ? _configuracoes.Emitente.CPF
+                    : _configuracoes.Emitente.CNPJ;
+
+                var retornoInsucesso = servicoNFe.RecepcaoEventoCancInsucessoEntrega(Convert.ToInt32(idlote),
+                    Convert.ToInt16(sequenciaEvento), cpfcnpj, chave, nProtEvento);
+
+                TrataRetorno(retornoInsucesso);
 
                 #endregion
             }
@@ -1434,8 +1579,8 @@ namespace NFe.AppTeste
                 {
                     detPag = new List<detPag>
                     {
-                        new detPag {tPag = FormaPagamento.fpCreditoLoja, vPag = valorPagto},
-                        new detPag {tPag = FormaPagamento.fpCreditoLoja, vPag = icmsTot.vNF - valorPagto}
+                        new detPag {tPag = FormaPagamento.fpCreditoEmLoja, vPag = valorPagto},
+                        new detPag {tPag = FormaPagamento.fpCreditoEmLoja, vPag = icmsTot.vNF - valorPagto}
                     }
                 }
             };
@@ -1633,15 +1778,18 @@ namespace NFe.AppTeste
             {
                 #region NFeDistribuicaoDFe
 
-                var cnpj = Funcoes.InpuBox(this, "Consulta NFeDistribuicaoDFe", "CNPJ do destinatário da NFe:");
-                if (string.IsNullOrEmpty(cnpj)) throw new Exception("O CNPJ deve ser informado!");
-                if (cnpj.Length != 14) throw new Exception("O CNPJ deve conter 14 caracteres!");
+                var documento = Funcoes.InpuBox(this, "Consulta NFeDistribuicaoDFe", "CNPJ/CPF do destinatário da NFe:");
+                if (string.IsNullOrEmpty(documento))
+                    throw new Exception("O CNPJ/CPF deve ser informado!");
+                if (documento.Length != 11 && documento.Length != 14)
+                    throw new Exception("Se for CNPJ deve conter 14 caracteres.\r\nSe for CPF deve conter 11 caracteres.");
 
                 var nsu = Funcoes.InpuBox(this, "Consulta NFeDistribuicaoDFe", "Ultimo NSU Retornado");
                 if (string.IsNullOrEmpty(nsu))
                     nsu = "0";
 
-                if (int.Parse(nsu) < 0) throw new Exception("NSU deve ser maior ou igual a 0");
+                if (int.Parse(nsu) < 0)
+                    throw new Exception("NSU deve ser maior ou igual a 0");
 
                 string chnfe = "";
                 if (string.IsNullOrEmpty(nsu) || int.Parse(nsu) <= 0)
@@ -1651,12 +1799,12 @@ namespace NFe.AppTeste
                     throw new Exception("Último NSU ou Chave Eletrônica devem ser informados");
 
                 var servicoNFe = new ServicosNFe(_configuracoes.CfgServico);
-                var retornoNFeDistDFe = servicoNFe.NfeDistDFeInteresse(_configuracoes.EnderecoEmitente.UF.ToString(), cnpj, ultNSU: nsu, chNFE: chnfe);
+                var retornoNFeDistDFe = servicoNFe.NfeDistDFeInteresse(_configuracoes.EnderecoEmitente.UF.ToString(), documento, ultNSU: nsu, chNFE: chnfe);
 
                 TrataRetorno(retornoNFeDistDFe);
 
-            #endregion
-        }
+                #endregion
+            }
             catch (ComunicacaoException ex)
             {
                 Funcoes.Mensagem(ex.Message, "Erro", MessageBoxButton.OK);
@@ -1767,9 +1915,9 @@ namespace NFe.AppTeste
 
 
 
-                //impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
-                impr.GerarJPEG(fileDialog.FileName.Replace(".jpeg", "") + ".jpeg");
-
+                impr.Imprimir(salvarArquivoPdfEm: fileDialog.FileName.Replace(".pdf", "") + ".pdf");
+                //var bytes = impr.PdfBytes();
+                //var base64 = Convert.ToBase64String(bytes);
             }
             catch (Exception ex)
             {

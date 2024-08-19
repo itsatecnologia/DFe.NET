@@ -35,7 +35,7 @@ using System.Threading.Tasks;
 using CTe.Classes;
 using CTe.Classes.Servicos.Consulta;
 using CTe.Servicos.Factory;
-using CTe.Utils.Extencoes;
+using CTe.Utils.Extensoes;
 
 namespace CTe.Servicos.ConsultaProtocolo
 {
@@ -44,7 +44,10 @@ namespace CTe.Servicos.ConsultaProtocolo
         public retConsSitCTe ConsultaProtocolo(string chave, ConfiguracaoServico configuracaoServico = null)
         {
             var consSitCTe = ClassesFactory.CriarconsSitCTe(chave, configuracaoServico);
-            consSitCTe.ValidarSchema(configuracaoServico);
+
+            if (configuracaoServico.IsValidaSchemas)
+                consSitCTe.ValidarSchema(configuracaoServico);
+
             consSitCTe.SalvarXmlEmDisco(configuracaoServico);
 
             var webService = WsdlFactory.CriaWsdlConsultaProtocolo(configuracaoServico);
@@ -56,10 +59,31 @@ namespace CTe.Servicos.ConsultaProtocolo
             return retorno;
         }
 
+        public retConsSitCTe ConsultaProtocoloV4(string chave, ConfiguracaoServico configuracaoServico = null)
+        {
+            var consSitCTe = ClassesFactory.CriarconsSitCTe(chave, configuracaoServico);
+
+            if (configuracaoServico.IsValidaSchemas)
+                consSitCTe.ValidarSchema(configuracaoServico);
+
+            consSitCTe.SalvarXmlEmDisco(configuracaoServico);
+
+            var webService = WsdlFactory.CriaWsdlConsultaProtocoloV4(configuracaoServico);
+            var retornoXml = webService.cteConsultaCT(consSitCTe.CriaRequestWs());
+
+            var retorno = retConsSitCTe.LoadXml(retornoXml.OuterXml, consSitCTe);
+            retorno.SalvarXmlEmDisco(chave, configuracaoServico);
+
+            return retorno;
+        }
+
         public async Task<retConsSitCTe> ConsultaProtocoloAsync(string chave, ConfiguracaoServico configuracaoServico = null)
         {
             var consSitCTe = ClassesFactory.CriarconsSitCTe(chave, configuracaoServico);
-            consSitCTe.ValidarSchema(configuracaoServico);
+            
+            if (configuracaoServico.IsValidaSchemas)
+                consSitCTe.ValidarSchema(configuracaoServico);
+            
             consSitCTe.SalvarXmlEmDisco(configuracaoServico);
 
             var webService = WsdlFactory.CriaWsdlConsultaProtocolo(configuracaoServico);

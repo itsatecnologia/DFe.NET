@@ -48,11 +48,13 @@ namespace CTe.Classes
         private static volatile ConfiguracaoServico _instancia;
         private static readonly object SyncRoot = new object();
         private string _diretorioSchemas;
+        private bool _unZip = true;
 
         public ConfiguracaoServico()
         {
             ConfiguracaoCertificado = new ConfiguracaoCertificado();
             TipoEmissao = tpEmis.teNormal;
+            IsValidaSchemas = true;
         }
 
         /// <summary>
@@ -116,6 +118,21 @@ namespace CTe.Classes
         /// </summary>
         public versao VersaoLayout { get; set; }
 
+        public versao ObterVersaoLayoutValida()
+        {
+            switch (VersaoLayout)
+            {
+                case versao.ve200:
+                    return versao.ve200;
+                case versao.ve300:
+                    return versao.ve300;
+                case versao.ve400:
+                    return versao.ve400;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         public bool IsAdicionaQrCode { get; set; }
 
         /// <summary>
@@ -140,7 +157,23 @@ namespace CTe.Classes
         /// <summary>
         ///     Diretório onde os xmls de envio/retorno devem ser salvos
         /// </summary>
-        public string DiretorioSalvarXml { get; set; }    
+        public string DiretorioSalvarXml { get; set; }
+        
+        /// <summary>
+        /// Valor True, será descompactado os arquivos,
+        /// Valor False, os valor não será descompactado e a classes não serão preenchidas
+        /// </summary>
+        public bool UnZip
+        {
+            get
+            {
+                return _unZip;
+            }
+            set
+            {
+                _unZip = value;
+            }
+        }
 
         /// <summary>
         ///     Instância do Singleton de ConfiguracaoServico
@@ -161,6 +194,8 @@ namespace CTe.Classes
         }
 
         public tpEmis TipoEmissao { get; set; }
+
+        public bool IsValidaSchemas { get; set; }
 
         public bool NaoSalvarXml()
         {
